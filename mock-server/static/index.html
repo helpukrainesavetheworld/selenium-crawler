@@ -1,0 +1,27 @@
+<html>
+    <head>
+        <script type="application/javascript">
+            window.onload = () => {
+                let data = { login: "login", password: "test", token: "2"};
+
+                fetch("/api/login?login=test&password=test", {
+                    method: "GET",
+                    headers: {'Content-Type': 'application/json'},
+                }).then(res => {
+                    console.log("Request complete! response:", res);
+                });
+
+                fetch("/api/login", {
+                    method: "POST",
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                }).then(res => {
+                    console.log("Request complete! response:", res);
+                });
+            }
+        </script>
+    </head>
+    <body>
+        test
+    </body>
+</html>
