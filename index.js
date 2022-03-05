@@ -2,6 +2,7 @@ const puppeteer = require('puppeteer');
 const urlParser = require('url');
 const axios = require('axios').default;
 const fs = require('fs');
+const { config } = require('process');
 
 let xhrRequests = [];
 let visited = {};
@@ -280,22 +281,24 @@ async function start(rootUrl) {
     console.log("Found next requests: ");
     console.log(xhrRequests);
     console.log("Detecting slowest input data...");
+
+    let jsonConfig = [];
     for (const [_, request] of Object.entries(xhrRequests)) {
         const slowData = await detectSlowData(request);
         slowData.forEach((slowData) => {
-            const jsonConfig = generateConfig({
+            jsonConfig.push(generateConfig({
                 "url": request.url,
                 "method": request.method,
                 "data": slowData,
-            });
-            fs.writeFile('config.json', content, err => {
-                if (err) {
-                  console.error(err)
-                  return
-                }
-            });
+            }));
         });
     }
+    fs.writeFile('config.json', JSON.stringify(jsonConfig), err => {
+        if (err) {
+          console.error(err)
+          return
+        }
+    });
 }
 
 const url = process.argv.slice(2)[0];
