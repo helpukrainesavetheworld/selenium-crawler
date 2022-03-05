@@ -1,6 +1,7 @@
 const puppeteer = require('puppeteer');
 const urlParser = require('url');
 const axios = require('axios').default;
+const fs = require('fs');
 
 let xhrRequests = [];
 let visited = {};
@@ -67,7 +68,7 @@ function fetch(browser, rootUrl, currentUrl, currentLevel) {
                             const baseUrl = parsedUrl.protocol + "//" + parsedUrl.host + parsedUrl.pathname;
                             let contentType;
                             let data;
-                            
+
                             if (Object.keys(query).length > 0) {
                                 data = JSON.parse(JSON.stringify(urlParser.parse(requestUrl, true).query));
                                 contentType = extractFieldTypes(data);
@@ -282,11 +283,17 @@ async function start(rootUrl) {
     for (const [_, request] of Object.entries(xhrRequests)) {
         const slowData = await detectSlowData(request);
         slowData.forEach((slowData) => {
-            console.log(generateConfig({
+            const jsonConfig = generateConfig({
                 "url": request.url,
                 "method": request.method,
                 "data": slowData,
-            }));
+            });
+            fs.writeFile('config.json', content, err => {
+                if (err) {
+                  console.error(err)
+                  return
+                }
+            });
         });
     }
 }
