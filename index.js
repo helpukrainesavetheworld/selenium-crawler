@@ -124,32 +124,34 @@ function fetch(browser, rootUrl, currentUrl, currentLevel) {
     })
 }
 
-async function start(rootUrl) {
-    const browser = await puppeteer.launch({
-        userDataDir: './.data',
-    });
-
-    axios.defaults.headers = {
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-    };
-
-    await fetch(browser, rootUrl, rootUrl, 1);
-    await browser.close();
-    console.log("Found next requests: ");
-    console.log(xhrRequests);
-    console.log("Detecting slowest input data...");
-    for (const [_, request] of Object.entries(xhrRequests)) {
-        const slowData = await detectSlowData(request);
-        slowData.forEach((slowData) => {
-            console.log({
-                "url": request.url,
-                "method": request.method,
-                "data": slowData,
-            })
-        });
+function generateConfig(slowRequest) {
+    let path = slowRequest.url;
+    if (slowRequest.method === 'GET') {
+        path += new URLSearchParams(slowRequest.data).toString()
     }
+
+    let baseConfig = {
+        "type": "http",
+        "args": {
+          "method": slowRequest.method,
+          "path": path,
+          "headers": {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+           },
+          "interval_ms": 1
+        },
+        "client": {
+            "proxy_urls": "{{ get_proxylist }}"
+        }
+    }
+
+    if (slowRequest.method === 'POST') {
+        baseConfig.args["body"] = slowRequest.data;
+    }
+
+    return baseConfig;
 }
 
 async function detectSlowData(request) {
@@ -183,9 +185,6 @@ async function sendRequest(request, data) {
     try {
         if (request.method === 'GET') {
             await axios.get(request.url, {
-                headers: {
-
-                },
                 params: data
             });
         } else {
@@ -262,6 +261,34 @@ function generateObject(fieldSize) {
         obj[i] = r;
     }
     return obj;
+}
+
+async function start(rootUrl) {
+    const browser = await puppeteer.launch({
+        userDataDir: './.data',
+    });
+
+    axios.defaults.headers = {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+    };
+
+    await fetch(browser, rootUrl, rootUrl, 1);
+    await browser.close();
+    console.log("Found next requests: ");
+    console.log(xhrRequests);
+    console.log("Detecting slowest input data...");
+    for (const [_, request] of Object.entries(xhrRequests)) {
+        const slowData = await detectSlowData(request);
+        slowData.forEach((slowData) => {
+            console.log(generateConfig({
+                "url": request.url,
+                "method": request.method,
+                "data": slowData,
+            }));
+        });
+    }
 }
 
 const url = process.argv.slice(2)[0];

@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
+    "start-testing": "node index.js http://localhost:3000",
     "server": "node mock-server/app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
